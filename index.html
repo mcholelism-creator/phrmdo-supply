@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHRMDO Supply — Inventory System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1A5C38;--green-mid:#2E7D52;--green-light:#E8F5EE;--green-pale:#F2FAF6;
+  --amber:#8A5E00;--amber-bg:#FDF3E3;
+  --red:#A32D2D;--red-bg:#FBEAEA;
+  --blue:#185FA5;--blue-bg:#E6F1FB;
+  --surface:#FFFFFF;--surface-alt:#F7F9F8;--bg:#EEF3F0;
+  --border:#D5DDD8;--border-light:#EAF0EC;
+  --text:#1A2520;--text-2:#4A6055;--text-3:#8AA097;
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--green)}
+.login-box{background:white;border-radius:16px;padding:2.5rem 2rem;width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.login-logo{text-align:center;margin-bottom:1.75rem}
+.login-logo img{width:76px;height:76px;object-fit:contain}
+.login-logo i{font-size:40px;color:var(--green-mid)}
+.login-logo h1{font-size:20px;font-weight:700;color:var(--green);margin-top:8px}
+.login-logo p{font-size:12px;color:var(--text-3);margin-top:2px}
+.lbl{font-size:11.5px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;display:block}
+.inp{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--text);background:white;transition:border-color .12s}
+.inp:focus{outline:none;border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(46,125,82,.1)}
+.fg{margin-bottom:1rem}
+.btn-login{width:100%;padding:11px;background:var(--green);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;margin-top:.5rem;transition:background .12s}
+.btn-login:hover{background:var(--green-mid)}
+.login-err{color:#A32D2D;font-size:12.5px;text-align:center;margin-top:8px;display:none}
+
+/* APP SHELL */
+#app{display:none}
+.app-header{background:var(--green);color:white;height:54px;display:flex;align-items:center;padding:0 1.5rem;gap:12px;position:sticky;top:0;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+.app-header .logo{font-size:15px;font-weight:700;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
+.app-header .logo img{width:28px;height:28px;object-fit:contain;border-radius:50%}
+.app-header .logo i{font-size:20px;color:#7ECFA0}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:#A8D4BB}
+.hdr-right strong{color:white}
+.hdr-right .role-badge{font-size:11px;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:20px;color:#C8EEDA}
+.hdr-btn{background:rgba(255,255,255,.12);border:none;color:white;padding:5px 10px;border-radius:6px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.hdr-btn:hover{background:rgba(255,255,255,.22)}
+
+.layout{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 54px)}
+.sidebar{background:var(--green);padding:1rem 0;border-right:1px solid rgba(255,255,255,.07)}
+.snav-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5A9A78;padding:.75rem 1rem .3rem}
+.snav-item{display:flex;align-items:center;gap:9px;padding:9px 14px;color:#A8D4BB;font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .12s;margin-bottom:1px}
+.snav-item i{font-size:16px}
+.snav-item:hover{background:rgba(255,255,255,.08);color:white}
+.snav-item.active{background:rgba(255,255,255,.13);color:white;border-left-color:#7ECFA0;font-weight:500}
+.snav-div{border:none;border-top:1px solid rgba(255,255,255,.07);margin:.5rem 1rem}
+
+.main{overflow-y:auto;padding:1.5rem}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.page-title{font-size:17px;font-weight:700;color:var(--green)}
+.page-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1.25rem;margin-bottom:1.25rem}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--green);margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.card-title i{font-size:15px}
+
+/* STAT BOXES */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem}
+.stat-box{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1rem 1.25rem}
+.stat-box .s-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:4px}
+.stat-box .s-val{font-size:26px;font-weight:700;color:var(--green);line-height:1}
+.stat-box .s-sub{font-size:11.5px;color:var(--text-2);margin-top:4px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:background .12s;font-family:inherit}
+.btn:hover{background:var(--surface-alt)}
+.btn i{font-size:14px}
+.btn-primary{background:var(--green);color:white;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-mid)}
+.btn-success{background:var(--green-light);color:var(--green);border-color:#A8D4BB}
+.btn-success:hover{background:#D0EBDA}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:#EAC5C5}
+.btn-danger:hover{background:#F5D5D5}
+.btn-warning{background:var(--amber-bg);color:var(--amber);border-color:#F0D49A}
+.btn-sm{padding:4px 9px;font-size:11.5px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);background:var(--surface-alt);border-bottom:1px solid var(--border)}
+td{padding:9px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface-alt)}
+
+/* BADGES */
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px}
+.b-pending{background:var(--amber-bg);color:var(--amber)}
+.b-approved{background:var(--green-light);color:var(--green)}
+.b-rejected{background:var(--red-bg);color:var(--red)}
+.b-low{background:var(--red-bg);color:var(--red)}
+.b-ok{background:var(--green-light);color:var(--green)}
+.b-mid{background:var(--amber-bg);color:var(--amber)}
+.b-info{background:var(--blue-bg);color:var(--blue)}
+
+/* FORM */
+.form-grid{display:grid;gap:.875rem 1rem}
+.fg2{grid-template-columns:1fr 1fr}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.span-2{grid-column:span 2}
+.form-group.span-3{grid-column:span 3}
+.form-label{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2)}
+.form-control{padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13.5px;color:var(--text);background:white;transition:border-color .12s;font-family:inherit;width:100%}
+.form-control:focus{outline:none;border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(46,125,82,.08)}
+select.form-control{cursor:pointer}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:var(--radius-lg);padding:1.75rem;width:480px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.modal-title{font-size:15px;font-weight:700;color:var(--green)}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-3);line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;border-top:1px solid var(--border-light);padding-top:1rem}
+
+/* STOCK BAR */
+.stock-bar-wrap{background:var(--border-light);border-radius:20px;height:6px;margin-top:4px}
+.stock-bar{height:6px;border-radius:20px;transition:width .3s}
+.stock-bar.ok{background:var(--green-mid)}
+.stock-bar.mid{background:#D4911A}
+.stock-bar.low{background:#C94040}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:white;padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:900;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);align-items:center;gap:8px}
+.toast.show{display:flex}
+.toast.error{background:var(--red)}
+
+/* PRINT */
+@media print{
+  .sidebar,.app-header,.no-print{display:none!important}
+  .layout{grid-template-columns:1fr}
+  .main{padding:.5rem}
+  .card{border:1px solid #ccc;page-break-inside:avoid}
+}
+
+/* MISC */
+.divider{border:none;border-top:1px solid var(--border-light);margin:1rem 0}
+.empty-state{text-align:center;padding:2.5rem;color:var(--text-3)}
+.empty-state i{font-size:36px;margin-bottom:.5rem;display:block}
+.pw-cell{font-family:monospace;font-size:12px;color:var(--text-2)}
+.qty-ctrl{display:flex;align-items:center;gap:6px}
+.qty-ctrl button{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--surface-alt);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.qty-ctrl input{width:56px;text-align:center;padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;color:var(--green)}
+.req-item-row{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light)}
+.req-item-row:last-child{border-bottom:none}
+.search-bar{display:flex;gap:8px;margin-bottom:1rem}
+.search-bar input{flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit}
+.search-bar input:focus{outline:none;border-color:var(--green-mid)}
+textarea.form-control{resize:vertical;font-family:inherit}
+.notice-box{border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:12.5px;display:flex;gap:10px;align-items:flex-start}
+.notice-approved{background:var(--green-light);color:var(--green)}
+.notice-rejected{background:var(--red-bg);color:var(--red)}
+.notice-box i{font-size:17px;margin-top:1px}
+.notice-box .notice-msg{color:var(--text-2);font-weight:400;margin-top:2px}
+.admin-msg-box{padding:8px 10px;background:var(--surface-alt);border-radius:6px;font-size:13px;color:var(--text-2);border:1px solid var(--border-light)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="assets/phrmdo-logo.jpg" alt="PHRMDO Logo">
+      <h1>PHRMDO Supply</h1>
+      <p>Office Supplies Inventory System</p>
+    </div>
+    <div class="fg"><label class="lbl">Username</label><input class="inp" id="login-user" placeholder="Enter username" autocomplete="off"></div>
+    <div class="fg"><label class="lbl">Password</label><input class="inp" type="password" id="login-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err">Incorrect username or password.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="app-header">
+    <div class="logo"><img src="assets/phrmdo-logo.jpg" alt="PHRMDO">PHRMDO Supply</div>
+    <div class="hdr-right">
+      <span id="hdr-name"></span>
+      <span class="role-badge" id="hdr-role"></span>
+      <button class="hdr-btn" onclick="doLogout()"><i class="ti ti-logout"></i> Sign Out</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <!-- built by JS -->
+    </nav>
+    <main class="main" id="main-area">
+      <!-- pages built by JS -->
+    </main>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-title">Modal</div>
+      <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA LAYER
+// ═══════════════════════════════════════════════
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+
+const SECTION_OPTIONS = ['HR-HRIS','HR-LEAVE Division','HR-PERFORMANCE MANAGEMENT','OIC-PHRMDO'];
+const PHRMDO_HEAD = { name:'MILA B. LISONDRA', title:'OIC-PHRMDO' };
+
+function initData() {
+  if (!LS.get('users')) {
+    LS.set('users', [
+      { id:'u0', username:'admin', password:'admin123', role:'admin', name:'Administrator', created:'2025-01-01' },
+      { id:'u1', username:'jreyes', password:'pass1234', role:'user', name:'Juan Reyes', created:'2025-01-05' },
+      { id:'u2', username:'msantos', password:'pass5678', role:'user', name:'Maria Santos', created:'2025-01-05' },
+    ]);
+  }
+  if (!LS.get('items')) {
+    LS.set('items', [
+      { id:'i1', name:'Bond Paper (Short)', category:'Paper', unit:'Ream', qty:50, minQty:10, description:'70gsm short size' },
+      { id:'i2', name:'Bond Paper (Long)', category:'Paper', unit:'Ream', qty:8, minQty:10, description:'70gsm long size' },
+      { id:'i3', name:'Ballpen (Black)', category:'Writing', unit:'Box', qty:15, minQty:5, description:'0.5mm black ink' },
+      { id:'i4', name:'Ballpen (Blue)', category:'Writing', unit:'Box', qty:3, minQty:5, description:'0.5mm blue ink' },
+      { id:'i5', name:'Folder (Long)', category:'Filing', unit:'Bundle', qty:20, minQty:5, description:'Pressboard long' },
+      { id:'i6', name:'Correction Tape', category:'Correction', unit:'Piece', qty:12, minQty:5, description:'4.2mm x 10m' },
+      { id:'i7', name:'Stapler', category:'Office Tools', unit:'Piece', qty:2, minQty:2, description:'Standard stapler' },
+      { id:'i8', name:'Staple Wire', category:'Office Tools', unit:'Box', qty:18, minQty:5, description:'26/6 standard' },
+      { id:'i9', name:'Scotch Tape', category:'Adhesive', unit:'Roll', qty:6, minQty:3, description:'1 inch clear' },
+      { id:'i10', name:'Ink (Black)', category:'Ink/Toner', unit:'Bottle', qty:2, minQty:3, description:'003 black refill' },
+    ]);
+  }
+  if (!LS.get('requests')) LS.set('requests', []);
+}
+
+let currentUser = null;
+
+// ═══════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  const users = LS.get('users') || [];
+  const found = users.find(x => x.username === u && x.password === p);
+  if (!found) { document.getElementById('login-err').style.display = 'block'; return; }
+  currentUser = found;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('hdr-name').innerHTML = '<strong>' + found.name + '</strong>';
+  document.getElementById('hdr-role').textContent = found.role === 'admin' ? 'Administrator' : 'Staff';
+  buildSidebar();
+  navigate(found.role === 'admin' ? 'dashboard' : 'my-requests');
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+function buildSidebar() {
+  const isAdmin = currentUser.role === 'admin';
+  let html = '';
+  if (isAdmin) {
+    html += `<div class="snav-label">Overview</div>
+      <div class="snav-item" onclick="navigate('dashboard')" data-page="dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+      <div class="snav-item" onclick="navigate('stock-monitor')" data-page="stock-monitor"><i class="ti ti-chart-bar"></i> Stock Monitor</div>
+      <hr class="snav-div">
+      <div class="snav-label">Inventory</div>
+      <div class="snav-item" onclick="navigate('items')" data-page="items"><i class="ti ti-box"></i> Stock Items</div>
+      <div class="snav-item" onclick="navigate('all-requests')" data-page="all-requests"><i class="ti ti-clipboard-list"></i> All Requests</div>
+      <div class="snav-item" onclick="navigate('history-report')" data-page="history-report"><i class="ti ti-history"></i> Purchase History</div>
+      <hr class="snav-div">
+      <div class="snav-label">Administration</div>
+      <div class="snav-item" onclick="navigate('users')" data-page="users"><i class="ti ti-users"></i> User Accounts</div>`;
+  } else {
+    html += `<div class="snav-label">My Work</div>
+      <div class="snav-item" onclick="navigate('my-requests')" data-page="my-requests"><i class="ti ti-clipboard-list"></i> My Requests</div>
+      <div class="snav-item" onclick="navigate('request-form')" data-page="request-form"><i class="ti ti-plus"></i> New Request</div>`;
+  }
+  document.getElementById('sidebar').innerHTML = html;
+}
+
+function navigate(page) {
+  document.querySelectorAll('.snav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  const area = document.getElementById('main-area');
+  switch (page) {
+    case 'dashboard': area.innerHTML = renderDashboard(); break;
+    case 'stock-monitor': area.innerHTML = renderStockMonitor(); break;
+    case 'items': area.innerHTML = renderItems(); break;
+    case 'all-requests': area.innerHTML = renderAllRequests(); break;
+    case 'history-report': area.innerHTML = renderHistoryReport(); break;
+    case 'users': area.innerHTML = renderUsers(); break;
+    case 'my-requests': area.innerHTML = renderMyRequests(); markRequestsSeen(); break;
+    case 'request-form': area.innerHTML = renderRequestForm(); break;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DASHBOARD (Admin only)
+// ═══════════════════════════════════════════════
+function renderDashboard() {
+  const items = LS.get('items') || [];
+  const reqs = LS.get('requests') || [];
+  const pending = reqs.filter(r => r.status === 'pending').length;
+  const approved = reqs.filter(r => r.status === 'approved').length;
+  const lowStock = items.filter(i => i.qty <= i.minQty).length;
+  const totalItems = items.length;
+
+  const recentReqs = [...reqs].sort((a,b) => b.date.localeCompare(a.date)).slice(0,5);
+  const lowItems = items.filter(i => i.qty <= i.minQty);
+
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">Dashboard</div><div class="page-sub">Inventory overview — ${new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="s-lbl">Total Items</div><div class="s-val">${totalItems}</div><div class="s-sub">Supply categories tracked</div></div>
+      <div class="stat-box"><div class="s-lbl">Pending Requests</div><div class="s-val" style="color:var(--amber)">${pending}</div><div class="s-sub">Awaiting your approval</div></div>
+      <div class="stat-box"><div class="s-lbl">Approved (All Time)</div><div class="s-val" style="color:var(--green)">${approved}</div><div class="s-sub">Total releases</div></div>
+      <div class="stat-box"><div class="s-lbl">Low Stock Items</div><div class="s-val" style="color:${lowStock>0?'var(--red)':'var(--green)'}">${lowStock}</div><div class="s-sub">At or below minimum</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-clock"></i> Recent Requests</div>
+        ${recentReqs.length ? `<table><thead><tr><th>Requestor</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>
+        ${recentReqs.map(r=>`<tr>
+          <td><strong>${r.requesterName}</strong><br><span style="font-size:11px;color:var(--text-3)">${r.items.length} item(s)</span></td>
+          <td style="font-size:12px">${r.date}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td><button class="btn btn-sm" onclick="viewRequest('${r.id}')"><i class="ti ti-eye"></i></button></td>
+        </tr>`).join('')}
+        </tbody></table>` : '<div class="empty-state"><i class="ti ti-clipboard-x"></i>No requests yet</div>'}
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-alert-triangle"></i> Low Stock Alert</div>
+        ${lowItems.length ? `<table><thead><tr><th>Item</th><th>Qty</th><th>Min</th></tr></thead><tbody>
+        ${lowItems.map(i=>`<tr>
+          <td>${i.name}</td>
+          <td><span style="color:var(--red);font-weight:700">${i.qty}</span> ${i.unit}</td>
+          <td style="color:var(--text-3)">${i.minQty}</td>
+        </tr>`).join('')}
+        </tbody></table>` : '<div class="empty-state"><i class="ti ti-circle-check"></i>All items sufficiently stocked</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  STOCK MONITOR (Admin only)
+// ═══════════════════════════════════════════════
+function renderStockMonitor() {
+  const items = LS.get('items') || [];
+  const cats = [...new Set(items.map(i=>i.category))];
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">Stock Monitor</div><div class="page-sub">Real-time inventory levels</div></div>
+      <button class="btn btn-primary no-print" onclick="window.print()"><i class="ti ti-printer"></i> Print Report</button>
+    </div>
+    ${cats.map(cat => {
+      const catItems = items.filter(i=>i.category===cat);
+      return `<div class="card">
+        <div class="card-title"><i class="ti ti-tag"></i> ${cat}</div>
+        <table><thead><tr><th>Item</th><th>Unit</th><th>Qty on Hand</th><th>Min Level</th><th>Status</th><th>Level</th></tr></thead><tbody>
+        ${catItems.map(i=>{
+          const pct = Math.min(100, Math.round(i.qty / Math.max(i.minQty*2,1)*100));
+          const lvl = i.qty <= 0 ? 'low' : i.qty <= i.minQty ? 'mid' : 'ok';
+          const lbl = i.qty <= 0 ? 'Out of Stock' : i.qty <= i.minQty ? 'Low Stock' : 'In Stock';
+          const bcls = i.qty <= 0 ? 'b-low' : i.qty <= i.minQty ? 'b-mid' : 'b-ok';
+          return `<tr>
+            <td><strong>${i.name}</strong><br><span style="font-size:11px;color:var(--text-3)">${i.description||''}</span></td>
+            <td>${i.unit}</td>
+            <td style="font-size:16px;font-weight:700;color:var(--green)">${i.qty}</td>
+            <td style="color:var(--text-3)">${i.minQty}</td>
+            <td><span class="badge ${bcls}">${lbl}</span></td>
+            <td style="width:120px"><div class="stock-bar-wrap"><div class="stock-bar ${lvl}" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text-3)">${pct}%</span></td>
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  ITEMS MANAGEMENT (Admin only)
+// ═══════════════════════════════════════════════
+function renderItems() {
+  const items = LS.get('items') || [];
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">Stock Items</div><div class="page-sub">Manage inventory catalogue and quantities</div></div>
+      <button class="btn btn-primary" onclick="openAddItem()"><i class="ti ti-plus"></i> Add Item</button>
+    </div>
+    <div class="card">
+      <div class="search-bar no-print"><input id="item-search" placeholder="Search items..." oninput="filterItems(this.value)"><button class="btn" onclick="filterItems(document.getElementById('item-search').value)"><i class="ti ti-search"></i></button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Item Name</th><th>Category</th><th>Unit</th><th>Qty</th><th>Min Qty</th><th>Status</th><th class="no-print">Actions</th></tr></thead>
+      <tbody id="items-tbody">
+      ${items.map(i => itemRow(i)).join('')}
+      </tbody></table></div>
+    </div>
+  </div>`;
+}
+
+function itemRow(i) {
+  const lvl = i.qty <= 0 ? 'b-low' : i.qty <= i.minQty ? 'b-mid' : 'b-ok';
+  const lbl = i.qty <= 0 ? 'Out of Stock' : i.qty <= i.minQty ? 'Low Stock' : 'In Stock';
+  return `<tr id="item-row-${i.id}">
+    <td><strong>${i.name}</strong><br><span style="font-size:11px;color:var(--text-3)">${i.description||''}</span></td>
+    <td>${i.category}</td>
+    <td>${i.unit}</td>
+    <td style="font-size:15px;font-weight:700;color:var(--green)">${i.qty}</td>
+    <td>${i.minQty}</td>
+    <td><span class="badge ${lvl}">${lbl}</span></td>
+    <td class="no-print" style="white-space:nowrap">
+      <button class="btn btn-sm" onclick="openEditItem('${i.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="btn btn-sm btn-danger" onclick="deleteItem('${i.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`;
+}
+
+function filterItems(q) {
+  const items = LS.get('items') || [];
+  const f = items.filter(i => i.name.toLowerCase().includes(q.toLowerCase()) || i.category.toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('items-tbody').innerHTML = f.map(i=>itemRow(i)).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:2rem">No items found</td></tr>';
+}
+
+function openAddItem() {
+  openModal('Add New Item', `
+    <div class="form-grid fg3">
+      <div class="form-group span-2"><label class="form-label">Item Name</label><input class="form-control" id="f-name" placeholder="e.g. Bond Paper (Short)"></div>
+      <div class="form-group"><label class="form-label">Category</label><input class="form-control" id="f-cat" placeholder="e.g. Paper"></div>
+      <div class="form-group"><label class="form-label">Unit</label><input class="form-control" id="f-unit" placeholder="Ream / Box / Piece"></div>
+      <div class="form-group"><label class="form-label">Quantity</label><input class="form-control" type="number" id="f-qty" min="0" value="0"></div>
+      <div class="form-group"><label class="form-label">Min Quantity</label><input class="form-control" type="number" id="f-min" min="0" value="5"></div>
+      <div class="form-group span-3"><label class="form-label">Description</label><input class="form-control" id="f-desc" placeholder="Optional description"></div>
+    </div>`,
+  [{label:'Cancel',cls:'btn',fn:'closeModal()'},
+   {label:'Add Item',cls:'btn btn-primary',fn:'saveNewItem()'}]);
+}
+
+function saveNewItem() {
+  const name = document.getElementById('f-name').value.trim();
+  const cat = document.getElementById('f-cat').value.trim();
+  const unit = document.getElementById('f-unit').value.trim();
+  const qty = parseInt(document.getElementById('f-qty').value)||0;
+  const minQty = parseInt(document.getElementById('f-min').value)||5;
+  const desc = document.getElementById('f-desc').value.trim();
+  if (!name||!cat||!unit) { alert('Please fill in required fields.'); return; }
+  const items = LS.get('items') || [];
+  items.push({ id:'i'+Date.now(), name, category:cat, unit, qty, minQty, description:desc });
+  LS.set('items', items);
+  closeModal(); navigate('items'); showToast('Item added successfully.');
+}
+
+function openEditItem(id) {
+  const items = LS.get('items') || [];
+  const i = items.find(x=>x.id===id);
+  if (!i) return;
+  openModal('Edit Item', `
+    <div class="form-grid fg3">
+      <div class="form-group span-2"><label class="form-label">Item Name</label><input class="form-control" id="f-name" value="${i.name}"></div>
+      <div class="form-group"><label class="form-label">Category</label><input class="form-control" id="f-cat" value="${i.category}"></div>
+      <div class="form-group"><label class="form-label">Unit</label><input class="form-control" id="f-unit" value="${i.unit}"></div>
+      <div class="form-group"><label class="form-label">Quantity</label><input class="form-control" type="number" id="f-qty" value="${i.qty}" min="0"></div>
+      <div class="form-group"><label class="form-label">Min Quantity</label><input class="form-control" type="number" id="f-min" value="${i.minQty}" min="0"></div>
+      <div class="form-group span-3"><label class="form-label">Description</label><input class="form-control" id="f-desc" value="${i.description||''}"></div>
+    </div>`,
+  [{label:'Cancel',cls:'btn',fn:'closeModal()'},
+   {label:'Save Changes',cls:'btn btn-primary',fn:'saveEditItem("'+id+'")'}]);
+}
+
+function saveEditItem(id) {
+  const items = LS.get('items') || [];
+  const idx = items.findIndex(x=>x.id===id);
+  if (idx<0) return;
+  items[idx] = { ...items[idx],
+    name: document.getElementById('f-name').value.trim(),
+    category: document.getElementById('f-cat').value.trim(),
+    unit: document.getElementById('f-unit').value.trim(),
+    qty: parseInt(document.getElementById('f-qty').value)||0,
+    minQty: parseInt(document.getElementById('f-min').value)||5,
+    description: document.getElementById('f-desc').value.trim(),
+  };
+  LS.set('items', items);
+  closeModal(); navigate('items'); showToast('Item updated.');
+}
+
+function deleteItem(id) {
+  if (!confirm('Delete this item? This cannot be undone.')) return;
+  const items = LS.get('items') || [];
+  LS.set('items', items.filter(i=>i.id!==id));
+  navigate('items'); showToast('Item deleted.');
+}
+
+// ═══════════════════════════════════════════════
+//  REQUEST FORM (Staff/User)
+// ═══════════════════════════════════════════════
+function renderRequestForm() {
+  const items = LS.get('items') || [];
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">New Supply Request</div><div class="page-sub">Select items and quantities to request</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-user"></i> Requestor Information</div>
+      <div class="form-grid fg2">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-control" value="${currentUser.name}" disabled></div>
+        <div class="form-group"><label class="form-label">Username</label><input class="form-control" value="${currentUser.username}" disabled></div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-control" value="${new Date().toLocaleDateString('en-PH')}" disabled></div>
+        <div class="form-group"><label class="form-label">Officer In Charge</label><input class="form-control" id="req-oic" placeholder="Name of Officer In Charge"></div>
+        <div class="form-group"><label class="form-label">Sectioning</label>
+          <select class="form-control" id="req-section">
+            <option value="">Select section...</option>
+            ${SECTION_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Purpose / Remarks</label><input class="form-control" id="req-purpose" placeholder="e.g. For monthly office use"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-package"></i> Select Supplies</div>
+      <div class="search-bar"><input id="req-search" placeholder="Search items..." oninput="filterReqItems(this.value)"></div>
+      <div id="req-items-list">
+        ${items.map(i=>`
+        <div class="req-item-row" id="rrow-${i.id}">
+          <div>
+            <div style="font-weight:500">${i.name}</div>
+            <div style="font-size:11.5px;color:var(--text-3)">${i.category} · ${i.unit} · <strong>${i.qty}</strong> available</div>
+          </div>
+          <div id="avail-${i.id}" style="font-size:12px;${i.qty<=i.minQty?'color:var(--amber)':'color:var(--text-3)'}">
+            ${i.qty<=0?'Out of stock':i.qty<=i.minQty?'Low stock':''}
+          </div>
+          <div class="qty-ctrl">
+            <button onclick="adjReqQty('${i.id}',-1)">−</button>
+            <input type="number" id="rqty-${i.id}" value="0" min="0" max="${i.qty}" oninput="clampReqQty('${i.id}',${i.qty})">
+            <button onclick="adjReqQty('${i.id}',1,${i.qty})">+</button>
+          </div>
+          <span id="runit-${i.id}" style="font-size:12px;color:var(--text-3);min-width:40px">${i.unit}</span>
+        </div>`).join('')}
+      </div>
+      <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn" onclick="clearReqForm()"><i class="ti ti-refresh"></i> Clear</button>
+        <button class="btn btn-primary" onclick="submitRequest()"><i class="ti ti-send"></i> Submit Request</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function filterReqItems(q) {
+  const items = LS.get('items') || [];
+  items.forEach(i=>{
+    const row = document.getElementById('rrow-'+i.id);
+    if (row) row.style.display = i.name.toLowerCase().includes(q.toLowerCase()) || i.category.toLowerCase().includes(q.toLowerCase()) ? 'grid' : 'none';
+  });
+}
+
+function adjReqQty(id, delta, max=9999) {
+  const el = document.getElementById('rqty-'+id);
+  const v = Math.max(0, Math.min(max, (parseInt(el.value)||0)+delta));
+  el.value = v;
+}
+
+function clampReqQty(id, max) {
+  const el = document.getElementById('rqty-'+id);
+  if (parseInt(el.value)>max) el.value = max;
+  if (parseInt(el.value)<0) el.value = 0;
+}
+
+function clearReqForm() {
+  const items = LS.get('items') || [];
+  items.forEach(i=>{ const el=document.getElementById('rqty-'+i.id); if(el) el.value=0; });
+  const p = document.getElementById('req-purpose'); if(p) p.value='';
+}
+
+function submitRequest() {
+  const items = LS.get('items') || [];
+  const selected = [];
+  items.forEach(i => {
+    const el = document.getElementById('rqty-'+i.id);
+    const qty = parseInt(el?.value)||0;
+    if (qty > 0) selected.push({ itemId:i.id, itemName:i.name, unit:i.unit, qtyRequested:qty, qtyApproved:qty });
+  });
+  if (!selected.length) { alert('Please select at least one item.'); return; }
+  const officerInCharge = document.getElementById('req-oic')?.value.trim()||'';
+  const section = document.getElementById('req-section')?.value||'';
+  if (!officerInCharge) { alert('Please enter the Officer In Charge.'); return; }
+  if (!section) { alert('Please select the Sectioning.'); return; }
+  const purpose = document.getElementById('req-purpose')?.value.trim()||'';
+  const reqs = LS.get('requests') || [];
+  const req = {
+    id: 'r'+Date.now(),
+    requesterId: currentUser.id,
+    requesterName: currentUser.name,
+    requesterUsername: currentUser.username,
+    officerInCharge,
+    section,
+    date: new Date().toLocaleDateString('en-PH'),
+    dateISO: new Date().toISOString(),
+    purpose,
+    status: 'pending',
+    items: selected,
+    approvedBy: null,
+    approvedDate: null,
+    remarks: '',
+  };
+  reqs.unshift(req);
+  LS.set('requests', reqs);
+  showToast('Request submitted successfully!');
+  navigate('my-requests');
+}
+
+// ═══════════════════════════════════════════════
+//  MY REQUESTS (Staff)
+// ═══════════════════════════════════════════════
+function renderMyRequests() {
+  const reqs = (LS.get('requests')||[]).filter(r=>r.requesterId===currentUser.id);
+  const newlyProcessed = reqs.filter(r=>r.status!=='pending' && r.seen!==true);
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">My Supply Requests</div><div class="page-sub">Track the status of your submitted requests</div></div>
+      <button class="btn btn-primary" onclick="navigate('request-form')"><i class="ti ti-plus"></i> New Request</button>
+    </div>
+    ${newlyProcessed.map(r=>`
+      <div class="notice-box ${r.status==='approved'?'notice-approved':'notice-rejected'}">
+        <i class="ti ti-${r.status==='approved'?'circle-check':'circle-x'}"></i>
+        <div>
+          <strong>${r.status==='approved'?'Your item requested has been approved.':'Your item request has been rejected.'}</strong>
+          <div class="notice-msg">${r.date} · ${r.items.map(i=>i.itemName).join(', ')}${r.remarks?`<br>Administrator message: "${r.remarks}"`:''}</div>
+        </div>
+      </div>`).join('')}
+    <div class="card">
+      ${reqs.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Items</th><th>Section</th><th>Purpose</th><th>Status</th><th>Approved Qty</th><th>Admin Message</th><th></th></tr></thead><tbody>
+      ${reqs.map(r=>`<tr>
+        <td>${r.date}</td>
+        <td>${r.items.map(i=>`${i.itemName}`).join(', ')}</td>
+        <td style="font-size:12px">${r.section||'—'}</td>
+        <td style="color:var(--text-2)">${r.purpose||'—'}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td style="font-size:12px">${r.status==='approved'?r.items.map(i=>`${i.qtyApproved} ${i.unit}`).join(', '):'—'}</td>
+        <td style="font-size:12px;color:var(--text-2)">${r.remarks||'—'}</td>
+        <td><button class="btn btn-sm" onclick="viewRequest('${r.id}')"><i class="ti ti-eye"></i> View</button></td>
+      </tr>`).join('')}
+      </tbody></table></div>`
+      : '<div class="empty-state"><i class="ti ti-clipboard-x"></i>You have no requests yet.<br><button class="btn btn-primary" style="margin-top:12px" onclick="navigate(\'request-form\')"><i class="ti ti-plus"></i> Make a Request</button></div>'}
+    </div>
+  </div>`;
+}
+
+function markRequestsSeen() {
+  const reqs = LS.get('requests') || [];
+  let changed = false;
+  reqs.forEach(r=>{ if (r.requesterId===currentUser.id && r.status!=='pending' && r.seen!==true) { r.seen = true; changed = true; } });
+  if (changed) LS.set('requests', reqs);
+}
+
+// ═══════════════════════════════════════════════
+//  ALL REQUESTS (Admin)
+// ═══════════════════════════════════════════════
+function renderAllRequests() {
+  const reqs = LS.get('requests') || [];
+  const users = LS.get('users') || [];
+  const staffUsers = users.filter(u=>u.role==='user');
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">All Supply Requests</div><div class="page-sub">Review, approve or reject staff requests</div></div>
+      <div style="display:flex;gap:8px">
+        <select class="form-control" id="filter-user" onchange="filterAllRequests()" style="font-size:13px;padding:6px 10px">
+          <option value="">All Staff</option>
+          ${staffUsers.map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}
+        </select>
+        <select class="form-control" id="filter-status" onchange="filterAllRequests()" style="font-size:13px;padding:6px 10px">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Requestor</th><th>Items</th><th>Purpose</th><th>Status</th><th class="no-print">Action</th></tr></thead>
+      <tbody id="all-req-tbody">
+      ${renderAllReqRows(reqs)}
+      </tbody></table></div>
+    </div>
+  </div>`;
+}
+
+function renderAllReqRows(reqs) {
+  if (!reqs.length) return '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">No requests found</td></tr>';
+  return reqs.map(r=>`<tr>
+    <td>${r.date}</td>
+    <td><strong>${r.requesterName}</strong><br><span style="font-size:11px;color:var(--text-3)">@${r.requesterUsername}</span></td>
+    <td style="font-size:12px">${r.items.map(i=>i.itemName).join(', ')}</td>
+    <td style="font-size:12px;color:var(--text-2)">${r.purpose||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td class="no-print" style="white-space:nowrap">
+      <button class="btn btn-sm" onclick="viewRequest('${r.id}')"><i class="ti ti-eye"></i> Review</button>
+      ${r.status==='pending'?`<button class="btn btn-sm btn-success" onclick="quickApprove('${r.id}')"><i class="ti ti-check"></i></button>
+      <button class="btn btn-sm btn-danger" onclick="viewRequest('${r.id}')"><i class="ti ti-x"></i></button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+function filterAllRequests() {
+  let reqs = LS.get('requests') || [];
+  const uid = document.getElementById('filter-user')?.value;
+  const status = document.getElementById('filter-status')?.value;
+  if (uid) reqs = reqs.filter(r=>r.requesterId===uid);
+  if (status) reqs = reqs.filter(r=>r.status===status);
+  const tbody = document.getElementById('all-req-tbody');
+  if (tbody) tbody.innerHTML = renderAllReqRows(reqs);
+}
+
+function quickApprove(id) {
+  viewRequest(id);
+}
+
+// ═══════════════════════════════════════════════
+//  PURCHASE HISTORY REPORT (Admin)
+// ═══════════════════════════════════════════════
+function renderHistoryReport() {
+  const reqs = [...(LS.get('requests')||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const approvedCount = reqs.filter(r=>r.status==='approved').length;
+  const rejectedCount = reqs.filter(r=>r.status==='rejected').length;
+  const totalItemsIssued = reqs.filter(r=>r.status==='approved').reduce((sum,r)=>sum+r.items.reduce((s,it)=>s+(it.qtyApproved||0),0),0);
+
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">Purchase / Supply Request History</div><div class="page-sub">Complete record of every supply request ever filed</div></div>
+      <button class="btn btn-primary no-print" onclick="window.print()"><i class="ti ti-printer"></i> Print Report</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="s-lbl">Total Requests</div><div class="s-val">${reqs.length}</div><div class="s-sub">All-time filed</div></div>
+      <div class="stat-box"><div class="s-lbl">Approved</div><div class="s-val" style="color:var(--green)">${approvedCount}</div><div class="s-sub">Released to staff</div></div>
+      <div class="stat-box"><div class="s-lbl">Rejected</div><div class="s-val" style="color:var(--red)">${rejectedCount}</div><div class="s-sub">Denied requests</div></div>
+      <div class="stat-box"><div class="s-lbl">Items Issued</div><div class="s-val">${totalItemsIssued}</div><div class="s-sub">Total units released</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-history"></i> Full Request Log</div>
+      <div class="tbl-wrap"><table><thead><tr>
+        <th>Date</th><th>Requestor</th><th>Section</th><th>Officer In Charge</th><th>Items</th><th>Qty Approved</th><th>Status</th><th>Processed By</th><th>Admin Message</th>
+      </tr></thead><tbody>
+      ${reqs.length ? reqs.map(r=>`<tr>
+        <td>${r.date}</td>
+        <td><strong>${r.requesterName}</strong></td>
+        <td style="font-size:12px">${r.section||'—'}</td>
+        <td style="font-size:12px">${r.officerInCharge||'—'}</td>
+        <td style="font-size:12px">${r.items.map(i=>i.itemName).join(', ')}</td>
+        <td style="font-size:12px">${r.status==='approved'?r.items.map(i=>`${i.qtyApproved} ${i.unit}`).join(', '):'—'}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td style="font-size:12px">${r.approvedBy||'—'}</td>
+        <td style="font-size:12px;color:var(--text-2)">${r.remarks||'—'}</td>
+      </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-3)">No request history yet</td></tr>'}
+      </tbody></table></div>
+    </div>
+  </div>`;
+}
+
+function rejectRequest(id) {
+  const reqs = LS.get('requests') || [];
+  const idx = reqs.findIndex(r=>r.id===id);
+  if (idx<0) return;
+  const commentEl = document.getElementById('admin-comment');
+  const rmk = commentEl ? commentEl.value.trim() : '';
+  reqs[idx].status = 'rejected';
+  reqs[idx].remarks = rmk;
+  reqs[idx].approvedBy = currentUser.name;
+  reqs[idx].approvedDate = new Date().toLocaleDateString('en-PH');
+  reqs[idx].seen = false;
+  LS.set('requests', reqs);
+  closeModal(); navigate('all-requests'); showToast('Request rejected. The requestor has been notified.');
+}
+
+// ═══════════════════════════════════════════════
+//  VIEW / APPROVE REQUEST MODAL
+// ═══════════════════════════════════════════════
+function viewRequest(id) {
+  const reqs = LS.get('requests') || [];
+  const r = reqs.find(x=>x.id===id);
+  if (!r) return;
+  const isAdmin = currentUser.role==='admin';
+  const canApprove = isAdmin && r.status==='pending';
+
+  const itemsHtml = r.items.map((it,idx)=>`
+    <tr>
+      <td>${it.itemName}</td>
+      <td>${it.unit}</td>
+      <td>${it.qtyRequested}</td>
+      <td>${canApprove
+        ? `<div class="qty-ctrl"><button onclick="adjApprQty(${idx},-1)">−</button><input type="number" id="appr-qty-${idx}" value="${it.qtyApproved||it.qtyRequested}" min="0" max="${it.qtyRequested}" style="width:56px;text-align:center;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--green)"><button onclick="adjApprQty(${idx},1,${it.qtyRequested})">+</button></div>`
+        : (r.status==='approved'?`<strong style="color:var(--green)">${it.qtyApproved}</strong>`:'—')
+      }</td>
+    </tr>`).join('');
+
+  openModal(`Request — ${r.requesterName}`,`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;font-size:13px">
+      <div><span style="color:var(--text-3)">Requestor:</span> <strong>${r.requesterName}</strong></div>
+      <div><span style="color:var(--text-3)">Date:</span> ${r.date}</div>
+      <div><span style="color:var(--text-3)">Officer In Charge:</span> ${r.officerInCharge||'—'}</div>
+      <div><span style="color:var(--text-3)">Section:</span> ${r.section||'—'}</div>
+      <div><span style="color:var(--text-3)">Purpose:</span> ${r.purpose||'—'}</div>
+      <div><span style="color:var(--text-3)">Status:</span> ${statusBadge(r.status)}</div>
+      ${r.approvedBy?`<div><span style="color:var(--text-3)">Processed by:</span> ${r.approvedBy}</div><div><span style="color:var(--text-3)">On:</span> ${r.approvedDate}</div>`:``}
+    </div>
+    <table><thead><tr><th>Item</th><th>Unit</th><th>Requested</th><th>${canApprove?'Approve Qty':'Approved Qty'}</th></tr></thead>
+    <tbody>${itemsHtml}</tbody></table>
+    ${canApprove ? `
+    <div class="form-group" style="margin-top:1rem">
+      <label class="form-label">Administrator Message <span style="text-transform:none;font-weight:400">(shown to requestor)</span></label>
+      <textarea class="form-control" id="admin-comment" rows="3" placeholder="Add a note for the requestor — e.g. reason for approval/rejection"></textarea>
+    </div>` : (r.remarks ? `
+    <div class="form-group" style="margin-top:1rem">
+      <label class="form-label">Administrator Message</label>
+      <div class="admin-msg-box">${r.remarks}</div>
+    </div>` : '')}
+    <input type="hidden" id="modal-req-id" value="${id}">`,
+  [
+    {label:'Close',cls:'btn',fn:'closeModal()'},
+    ...(isAdmin&&r.status==='pending'?[{label:'Reject',cls:'btn btn-danger',fn:'rejectRequest("'+id+'")'},{label:'Approve Request',cls:'btn btn-primary',fn:'approveRequest("'+id+'")'}]:[]),
+    ...(isAdmin&&r.status==='approved'?[{label:'Print',cls:'btn',fn:'printRequest("'+id+'")'}]:[]),
+  ]);
+}
+
+function adjApprQty(idx, delta, max=9999) {
+  const el = document.getElementById('appr-qty-'+idx);
+  if (!el) return;
+  const v = Math.max(0, Math.min(max, (parseInt(el.value)||0)+delta));
+  el.value = v;
+}
+
+function approveRequest(id) {
+  const reqs = LS.get('requests') || [];
+  const items = LS.get('items') || [];
+  const idx = reqs.findIndex(r=>r.id===id);
+  if (idx<0) return;
+  const r = reqs[idx];
+
+  // Collect approved quantities
+  r.items = r.items.map((it, i)=>{
+    const el = document.getElementById('appr-qty-'+i);
+    const qty = el ? parseInt(el.value)||0 : it.qtyRequested;
+    return { ...it, qtyApproved: qty };
+  });
+
+  // Deduct from stock
+  r.items.forEach(it=>{
+    const itemIdx = items.findIndex(x=>x.id===it.itemId);
+    if (itemIdx>=0) items[itemIdx].qty = Math.max(0, items[itemIdx].qty - it.qtyApproved);
+  });
+
+  const commentEl = document.getElementById('admin-comment');
+  r.remarks = commentEl ? commentEl.value.trim() : '';
+  r.status = 'approved';
+  r.approvedBy = currentUser.name;
+  r.approvedDate = new Date().toLocaleDateString('en-PH');
+  r.seen = false;
+  LS.set('requests', reqs);
+  LS.set('items', items);
+
+  // Show post-approval modal with save/print/download options
+  showApprovedModal(r);
+  showToast('Request approved! Stock updated. The requestor has been notified.');
+}
+
+function showApprovedModal(r) {
+  const rowsHtml = r.items.map((it,i)=>`
+    <tr>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8f0ec">${i+1}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8f0ec"><strong>${it.itemName}</strong></td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8f0ec">${it.unit}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8f0ec;text-align:center">${it.qtyRequested}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8f0ec;text-align:center;font-weight:700;color:#1A5C38">${it.qtyApproved}</td>
+    </tr>`).join('');
+
+  openModal('Request Approved', `
+    <div style="background:#E8F5EE;border-radius:8px;padding:12px 14px;margin-bottom:1rem;display:flex;align-items:center;gap:10px">
+      <i class="ti ti-circle-check" style="font-size:22px;color:#1A5C38"></i>
+      <div><strong style="color:#1A5C38">Approved successfully.</strong><div style="font-size:12px;color:#4A6055">Stock has been deducted and the requestor has been notified. You can now save, print, or download this request slip.</div></div>
+    </div>
+    <div id="pdf-preview-area" style="border:1px solid #D5DDD8;border-radius:8px;padding:1.25rem;background:white;font-family:Arial,sans-serif;font-size:13px">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:15px;font-weight:700;color:#1A5C38;letter-spacing:.05em">SUPPLY REQUEST FORM</div>
+        <div style="font-size:11px;color:#8AA097">PHRMDO Supply · Office Supplies Inventory System</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-bottom:12px;padding-bottom:10px;border-bottom:1.5px solid #1A5C38;font-size:12px">
+        <div><span style="color:#8AA097">Requestor:</span> <strong>${r.requesterName}</strong></div>
+        <div><span style="color:#8AA097">Request Date:</span> ${r.date}</div>
+        <div><span style="color:#8AA097">Officer In Charge:</span> <strong>${r.officerInCharge||'—'}</strong></div>
+        <div><span style="color:#8AA097">Section:</span> ${r.section||'—'}</div>
+        <div><span style="color:#8AA097">Purpose:</span> ${r.purpose||'—'}</div>
+        <div><span style="color:#8AA097">Status:</span> <strong style="color:#1A5C38">APPROVED</strong></div>
+        <div><span style="color:#8AA097">Approved by:</span> <strong>${r.approvedBy}</strong></div>
+        <div><span style="color:#8AA097">Approved on:</span> ${r.approvedDate}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#E8F5EE">
+          <th style="padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#4A6055">#</th>
+          <th style="padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#4A6055">Item Name</th>
+          <th style="padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#4A6055">Unit</th>
+          <th style="padding:7px 10px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#4A6055">Qty Requested</th>
+          <th style="padding:7px 10px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#4A6055">Qty Approved</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      ${r.remarks?`<div style="margin-top:12px;font-size:11.5px;color:#4A6055"><strong>Administrator Message:</strong> ${r.remarks}</div>`:''}
+      <div style="margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:20px 24px">
+        <div style="border-top:1.5px solid #333;padding-top:6px;text-align:center;font-size:11px"><strong>${r.requesterName}</strong><br><span style="color:#8AA097">Requested by</span></div>
+        <div style="border-top:1.5px solid #333;padding-top:6px;text-align:center;font-size:11px"><strong>${r.officerInCharge||'&nbsp;'}</strong><br><span style="color:#8AA097">Officer In Charge</span></div>
+        <div style="border-top:1.5px solid #333;padding-top:6px;text-align:center;font-size:11px"><strong>${r.approvedBy}</strong><br><span style="color:#8AA097">Approved by</span></div>
+        <div style="border-top:1.5px solid #1A5C38;padding-top:6px;text-align:center;font-size:11px"><strong>${PHRMDO_HEAD.name}</strong><br><span style="color:#8AA097">${PHRMDO_HEAD.title} — Head, PHRMDO</span></div>
+      </div>
+      <div style="margin-top:16px;text-align:right;font-size:10px;color:#8AA097">Ref No: ${r.id} · Printed: ${new Date().toLocaleDateString('en-PH')}</div>
+    </div>`,
+  [
+    {label:'Close', cls:'btn', fn:'closeModal();navigate("all-requests")'},
+    {label:'<i class="ti ti-printer"></i> Print', cls:'btn', fn:'printApprovedSlip("'+r.id+'")'},
+    {label:'<i class="ti ti-download"></i> Download PDF', cls:'btn btn-primary', fn:'downloadPDF("'+r.id+'")'},
+  ]);
+}
+
+function printRequest(id) {
+  const reqs = LS.get('requests') || [];
+  const r = reqs.find(x=>x.id===id);
+  if (!r) { showToast('Request not found.', true); return; }
+  if (r.status !== 'approved') { showToast('Only approved requests can be printed.', true); return; }
+  printApprovedSlip(id);
+}
+
+function printApprovedSlip(id) {
+  const reqs = LS.get('requests') || [];
+  const r = reqs.find(x=>x.id===id);
+  if (!r) return;
+  if (r.status !== 'approved') { showToast('Only approved requests can be printed.', true); return; }
+  const w = window.open('', '_blank');
+  w.document.write(buildSlipHTML(r));
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 400);
+}
+
+function buildSlipHTML(r) {
+  return `<!DOCTYPE html><html><head><title>Supply Request Slip — ${r.requesterName}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;padding:2.5rem;font-size:13px;color:#1A2520}
+    .header{text-align:center;margin-bottom:1.5rem;border-bottom:2px solid #1A5C38;padding-bottom:1rem}
+    .header h1{font-size:16px;font-weight:700;color:#1A5C38;letter-spacing:.05em}
+    .header p{font-size:11px;color:#8AA097;margin-top:3px}
+    .status-bar{background:#E8F5EE;border-left:4px solid #1A5C38;padding:8px 12px;margin-bottom:1.25rem;font-size:12px}
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 2rem;margin-bottom:1.25rem;font-size:12.5px}
+    .meta span{color:#8AA097}
+    table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1.25rem}
+    th{background:#E8F5EE;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#4A6055;border-bottom:1.5px solid #1A5C38}
+    td{padding:7px 10px;border-bottom:1px solid #EAF0EC;vertical-align:middle}
+    td.center{text-align:center}
+    .qty-approved{font-weight:700;color:#1A5C38}
+    .admin-msg{margin-bottom:1.5rem;font-size:12px;color:#4A6055}
+    .sigs{display:grid;grid-template-columns:1fr 1fr;gap:1.75rem 2rem;margin-top:2.5rem}
+    .sig-box{border-top:1.5px solid #333;padding-top:8px;text-align:center;font-size:11.5px}
+    .sig-box strong{display:block;margin-bottom:3px}
+    .sig-box span{color:#8AA097;font-size:11px}
+    .footer{margin-top:2rem;font-size:10px;color:#8AA097;text-align:right;border-top:1px solid #EAF0EC;padding-top:8px}
+    @media print{@page{margin:1.5cm}body{padding:0}}
+  </style></head><body>
+  <div class="header"><h1>SUPPLY REQUEST FORM</h1><p>PHRMDO Supply · Office Supplies Inventory System</p></div>
+  <div class="status-bar">Status: <strong>APPROVED</strong> &nbsp;·&nbsp; Ref No: ${r.id}</div>
+  <div class="meta">
+    <div><span>Requestor: </span><strong>${r.requesterName}</strong></div>
+    <div><span>Request Date: </span><strong>${r.date}</strong></div>
+    <div><span>Officer In Charge: </span><strong>${r.officerInCharge||'—'}</strong></div>
+    <div><span>Section: </span><strong>${r.section||'—'}</strong></div>
+    <div><span>Purpose: </span><strong>${r.purpose||'—'}</strong></div>
+    <div><span>Approved by: </span><strong>${r.approvedBy}</strong></div>
+    <div><span>Approved on: </span><strong>${r.approvedDate}</strong></div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Item Name</th><th>Unit</th><th class="center">Qty Requested</th><th class="center">Qty Approved</th></tr></thead>
+    <tbody>
+    ${r.items.map((it,i)=>`<tr>
+      <td>${i+1}</td><td>${it.itemName}</td><td>${it.unit}</td>
+      <td class="center">${it.qtyRequested}</td>
+      <td class="center qty-approved">${it.qtyApproved}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table>
+  ${r.remarks?`<div class="admin-msg"><strong>Administrator Message:</strong> ${r.remarks}</div>`:''}
+  <div class="sigs">
+    <div class="sig-box"><strong>${r.requesterName}</strong><span>Requested by</span></div>
+    <div class="sig-box"><strong>${r.officerInCharge||'&nbsp;'}</strong><span>Officer In Charge</span></div>
+    <div class="sig-box"><strong>${r.approvedBy}</strong><span>Approved by</span></div>
+    <div class="sig-box"><strong>${PHRMDO_HEAD.name}</strong><span>${PHRMDO_HEAD.title} — Head, PHRMDO</span></div>
+  </div>
+  <div class="footer">Ref: ${r.id} &nbsp;·&nbsp; Printed: ${new Date().toLocaleString('en-PH')}</div>
+  </body></html>`;
+}
+
+function downloadPDF(id) {
+  const reqs = LS.get('requests') || [];
+  const r = reqs.find(x=>x.id===id);
+  if (!r) { showToast('Request not found.', true); return; }
+  if (r.status !== 'approved') { showToast('Only approved requests can be printed/downloaded.', true); return; }
+
+  if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+    showToast('PDF library not loaded. Try print instead.', true); return;
+  }
+
+  const { jsPDF } = window.jspdf || window;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  const green = [26, 92, 56];
+  const greenLight = [232, 245, 238];
+  const gray = [138, 160, 151];
+  const dark = [26, 37, 32];
+
+  const pw = doc.internal.pageSize.getWidth();
+
+  // Header bar
+  doc.setFillColor(...green);
+  doc.rect(0, 0, pw, 22, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica','bold');
+  doc.text('SUPPLY REQUEST FORM', pw/2, 10, {align:'center'});
+  doc.setFontSize(8);
+  doc.setFont('helvetica','normal');
+  doc.text('PHRMDO Supply · Office Supplies Inventory System', pw/2, 16, {align:'center'});
+
+  // Status badge
+  doc.setFillColor(...greenLight);
+  doc.roundedRect(14, 26, pw-28, 10, 2, 2, 'F');
+  doc.setTextColor(...green);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','bold');
+  doc.text('APPROVED', 20, 32.5);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(...gray);
+  doc.text(`Ref No: ${r.id}`, pw-16, 32.5, {align:'right'});
+
+  // Meta grid
+  const metaY = 42;
+  doc.setFontSize(8.5);
+  const meta = [
+    ['Requestor:', r.requesterName],
+    ['Request Date:', r.date],
+    ['Officer In Charge:', r.officerInCharge||'—'],
+    ['Section:', r.section||'—'],
+    ['Purpose:', r.purpose||'—'],
+    ['Approved by:', r.approvedBy],
+    ['Approved on:', r.approvedDate],
+  ];
+  const col1 = 14, col2 = pw/2+4;
+  meta.forEach((pair, i) => {
+    const x = i%2===0 ? col1 : col2;
+    const y = metaY + Math.floor(i/2)*7;
+    doc.setTextColor(...gray);
+    doc.setFont('helvetica','normal');
+    doc.text(pair[0], x, y);
+    doc.setTextColor(...dark);
+    doc.setFont('helvetica','bold');
+    doc.text(pair[1], x+28, y);
+  });
+
+  // Divider
+  const tableY = metaY + Math.ceil(meta.length/2)*7 + 4;
+  doc.setDrawColor(...green);
+  doc.setLineWidth(0.5);
+  doc.line(14, tableY-2, pw-14, tableY-2);
+
+  // Table
+  doc.autoTable({
+    startY: tableY + 2,
+    head: [['#', 'Item Name', 'Unit', 'Qty Requested', 'Qty Approved']],
+    body: r.items.map((it,i)=>[i+1, it.itemName, it.unit, it.qtyRequested, it.qtyApproved]),
+    theme: 'grid',
+    headStyles: { fillColor: green, textColor: [255,255,255], fontSize: 8, fontStyle:'bold', halign:'left' },
+    columnStyles: {
+      0: { cellWidth:10, halign:'center' },
+      3: { halign:'center' },
+      4: { halign:'center', textColor: green, fontStyle:'bold' },
+    },
+    styles: { fontSize:9, cellPadding:4, textColor: dark },
+    alternateRowStyles: { fillColor: [247,249,248] },
+    margin: { left:14, right:14 },
+  });
+
+  // Admin message
+  let afterTableY = doc.lastAutoTable.finalY + 6;
+  if (r.remarks) {
+    doc.setFontSize(8.5);
+    doc.setTextColor(...gray);
+    doc.setFont('helvetica','bold');
+    doc.text('Administrator Message:', 14, afterTableY);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(...dark);
+    const wrapped = doc.splitTextToSize(r.remarks, pw-28);
+    doc.text(wrapped, 14, afterTableY+5);
+    afterTableY += 5 + wrapped.length*4;
+  }
+
+  // Signature lines (2x2: Requestor / OIC / Approved by / Head of PHRMDO)
+  const sigY = Math.max(doc.lastAutoTable.finalY + 20, afterTableY + 14);
+  const sigW = (pw - 28 - 12) / 2;
+  const sigRows = [
+    [r.requesterName, 'Requested by'],
+    [r.officerInCharge||'', 'Officer In Charge'],
+  ];
+  const sigRows2 = [
+    [r.approvedBy, 'Approved by'],
+    [PHRMDO_HEAD.name, PHRMDO_HEAD.title + ' — Head, PHRMDO'],
+  ];
+  [sigRows, sigRows2].forEach((rowSet, rIdx) => {
+    rowSet.forEach((pair, i) => {
+      const sx = 14 + i*(sigW+12);
+      const sy = sigY + rIdx*22;
+      doc.setDrawColor(...dark);
+      doc.setLineWidth(0.4);
+      doc.line(sx, sy, sx+sigW, sy);
+      doc.setTextColor(...dark);
+      doc.setFontSize(8);
+      doc.setFont('helvetica','bold');
+      if (pair[0]) doc.text(pair[0], sx+sigW/2, sy+5, {align:'center'});
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(...gray);
+      doc.text(pair[1], sx+sigW/2, sy+10, {align:'center'});
+    });
+  });
+
+  // Footer
+  const footY = doc.internal.pageSize.getHeight() - 10;
+  doc.setFontSize(7.5);
+  doc.setTextColor(...gray);
+  doc.setFont('helvetica','normal');
+  doc.text(`Ref: ${r.id}  ·  Printed: ${new Date().toLocaleString('en-PH')}`, pw/2, footY, {align:'center'});
+
+  const filename = `SupplyRequest_${r.requesterName.replace(/\s+/g,'_')}_${r.date.replace(/\//g,'-')}.pdf`;
+  doc.save(filename);
+  showToast('PDF downloaded: ' + filename);
+}
+
+// ═══════════════════════════════════════════════
+//  USERS (Admin)
+// ═══════════════════════════════════════════════
+function renderUsers() {
+  const users = LS.get('users') || [];
+  return `
+  <div class="page active">
+    <div class="page-hdr">
+      <div><div class="page-title">User Accounts</div><div class="page-sub">Manage staff access and credentials</div></div>
+      <button class="btn btn-primary" onclick="openAddUser()"><i class="ti ti-user-plus"></i> Create User</button>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Password</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead><tbody>
+      ${users.map(u=>`<tr>
+        <td><strong>${u.name}</strong></td>
+        <td><code style="font-size:12px;background:var(--surface-alt);padding:2px 6px;border-radius:4px">${u.username}</code></td>
+        <td><span class="pw-cell">${u.password}</span></td>
+        <td><span class="badge ${u.role==='admin'?'b-info':'b-ok'}">${u.role==='admin'?'Admin':'Staff'}</span></td>
+        <td style="font-size:12px;color:var(--text-3)">${u.created}</td>
+        <td style="white-space:nowrap">
+          ${u.id!=='u0'?`<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')"><i class="ti ti-trash"></i> Delete</button>`:'<span style="font-size:11px;color:var(--text-3)">Protected</span>'}
+          <button class="btn btn-sm" onclick="printUserHistory('${u.id}')"><i class="ti ti-printer"></i> History</button>
+        </td>
+      </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+  </div>`;
+}
+
+function openAddUser() {
+  openModal('Create New User',`
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-control" id="f-uname" placeholder="e.g. Pedro Cruz"></div>
+      <div class="form-group"><label class="form-label">Username</label><input class="form-control" id="f-uuser" placeholder="e.g. pcruz" autocomplete="off"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-control" id="f-upass" placeholder="Choose a password" autocomplete="off"></div>
+      <div class="form-group"><label class="form-label">Role</label><select class="form-control" id="f-urole"><option value="user">Staff</option><option value="admin">Admin</option></select></div>
+    </div>`,
+  [{label:'Cancel',cls:'btn',fn:'closeModal()'},
+   {label:'Create User',cls:'btn btn-primary',fn:'saveNewUser()'}]);
+}
+
+function saveNewUser() {
+  const name = document.getElementById('f-uname').value.trim();
+  const username = document.getElementById('f-uuser').value.trim();
+  const password = document.getElementById('f-upass').value.trim();
+  const role = document.getElementById('f-urole').value;
+  if (!name||!username||!password) { alert('All fields are required.'); return; }
+  const users = LS.get('users') || [];
+  if (users.find(u=>u.username===username)) { alert('Username already exists.'); return; }
+  users.push({ id:'u'+Date.now(), username, password, role, name, created:new Date().toLocaleDateString('en-PH') });
+  LS.set('users', users);
+  closeModal(); navigate('users'); showToast('User created successfully.');
+}
+
+function deleteUser(id) {
+  if (!confirm('Delete this user account? Their request history will remain.')) return;
+  const users = LS.get('users') || [];
+  LS.set('users', users.filter(u=>u.id!==id));
+  navigate('users'); showToast('User deleted.');
+}
+
+function printUserHistory(uid) {
+  const users = LS.get('users') || [];
+  const u = users.find(x=>x.id===uid);
+  const reqs = (LS.get('requests')||[]).filter(r=>r.requesterId===uid);
+  if (!u) return;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Request History — ${u.name}</title>
+  <style>body{font-family:Arial,sans-serif;padding:2rem;font-size:13px}
+  h2{font-size:16px}h3{font-size:13px;margin:1rem 0 .5rem}
+  table{width:100%;border-collapse:collapse;margin-bottom:1rem}
+  th{background:#eee;padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase}
+  td{padding:6px 10px;border-bottom:1px solid #ddd;vertical-align:top}
+  </style></head><body>
+  <h2>Supply Request History</h2>
+  <p><strong>Employee:</strong> ${u.name} &nbsp;&nbsp; <strong>Username:</strong> ${u.username}</p>
+  <p><strong>Printed on:</strong> ${new Date().toLocaleDateString('en-PH')}</p>
+  <hr>
+  ${reqs.length ? reqs.map(r=>`
+    <h3>Request — ${r.date} &nbsp; [${r.status.toUpperCase()}]</h3>
+    <p><strong>Purpose:</strong> ${r.purpose||'—'} &nbsp; | &nbsp; <strong>Processed by:</strong> ${r.approvedBy||'—'} on ${r.approvedDate||'—'}</p>
+    <table><thead><tr><th>Item</th><th>Unit</th><th>Requested</th><th>Approved</th></tr></thead><tbody>
+    ${r.items.map(it=>`<tr><td>${it.itemName}</td><td>${it.unit}</td><td>${it.qtyRequested}</td><td>${r.status==='approved'?it.qtyApproved:'—'}</td></tr>`).join('')}
+    </tbody></table>`).join('')
+  : '<p>No requests found for this user.</p>'}
+  </body></html>`);
+  w.document.close();
+  w.print();
+}
+
+// ═══════════════════════════════════════════════
+//  MODAL HELPER
+// ═══════════════════════════════════════════════
+function openModal(title, body, buttons) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-footer').innerHTML = buttons.map(b=>
+    `<button class="${b.cls}" onclick="${b.fn}">${b.label}</button>`
+  ).join('');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function showToast(msg, error=false) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = 'toast show' + (error?' error':'');
+  setTimeout(()=>{ t.className = 'toast'; }, 3000);
+}
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+function statusBadge(s) {
+  if (s==='pending') return '<span class="badge b-pending"><i class="ti ti-clock" style="font-size:11px"></i>Pending</span>';
+  if (s==='approved') return '<span class="badge b-approved"><i class="ti ti-check" style="font-size:11px"></i>Approved</span>';
+  if (s==='rejected') return '<span class="badge b-rejected"><i class="ti ti-x" style="font-size:11px"></i>Rejected</span>';
+  return s;
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+initData();
+</script>
+</body>
+</html>
